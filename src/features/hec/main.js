@@ -2,16 +2,18 @@ import { rowsFromCsv, filterRows, exportRows } from './data.js';
 import { PERIODIC_TABLE_LAYOUT, LANTHANIDE_LAYOUT, ATOMIC_NUMBERS, ELEMENT_NAMES, ENGLISH_ELEMENT_NAMES, elementMatchesQuery, elementCategory } from './elements.js';
 import { escapeHtml, buildPrettyFormula, formatChemicalText, extractDois, paperTitle } from './format.js';
 import { validateIndexes } from './indexes.js';
+import { materialTypeLabel, sortMaterialTypes } from './material-type.js';
 import { HecError, errorMessage } from './messages.js';
 import { getLocale, translate as t } from '../../lib/i18n.js';
 
 export function initExplorer(root, { assetBaseUrl, version }) {
   const el = id => root.querySelector(`#${id}`);
-  const state = { rows: [], selected: new Set(), page: 1, pageSize: 25, official: false, indexes: { cifs: {}, supercells: {}, titles: {} }, loadEpoch: 0, sourceLabel: '', loading: false, error: null };
+  const state = { rows: [], selected: new Set(), materialType: 'all', page: 1, pageSize: 25, official: false, indexes: { cifs: {}, supercells: {}, titles: {} }, loadEpoch: 0, sourceLabel: '', loading: false, error: null };
   let available = new Set();
   const elementName = symbol => t(ELEMENT_NAMES[symbol], ENGLISH_ELEMENT_NAMES[symbol]);
   const morePapers = count => t(`另 ${count} 篇文献`, `${count} more ${count === 1 ? 'paper' : 'papers'}`);
   const localStructureTitle = () => t('本地数据不关联官方结构', 'Local data is not linked to official structures');
+  const typeLabel = type => t(...materialTypeLabel(type));
 
   function structureLinks(row, key, directory, label) {
     if (!state.official) return `<span class="muted" data-local-structure title="${localStructureTitle()}">—</span>`;
@@ -25,7 +27,25 @@ export function initExplorer(root, { assetBaseUrl, version }) {
     return links[0] + (links.length > 1 ? `<details><summary data-more-papers="${links.length - 1}">${morePapers(links.length - 1)}</summary>${links.slice(1).join('')}</details>` : '');
   }
 
-  function matches() { return filterRows(state.rows, [...state.selected]); }
+  function matches() { return filterRows(state.rows, [...state.selected], state.materialType); }
+
+  function renderMaterialTypes(labelsOnly = false) {
+    const select = el('materialType');
+    if (labelsOnly) {
+      select.querySelectorAll('option').forEach(option => { option.textContent = typeLabel(option.value); });
+      return;
+    }
+    const types = sortMaterialTypes(state.rows.map(row => row.data.material_type).filter(Boolean));
+    select.replaceChildren();
+    for (const value of ['all', ...types]) {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = typeLabel(value);
+      select.append(option);
+    }
+    state.materialType = 'all';
+    select.value = 'all';
+  }
 
   function renderResults(labelsOnly = false) {
     const filtered = matches();
@@ -162,6 +182,7 @@ export function initExplorer(root, { assetBaseUrl, version }) {
     el('metricElements').textContent = String(available.size);
     el('metricPrototypes').textContent = String(new Set(rows.map(row => row.data.prototype).filter(Boolean)).size);
     clearSearch();
+    renderMaterialTypes();
     renderPeriodicTable();
     renderSelection();
     renderResults();
@@ -250,6 +271,11 @@ export function initExplorer(root, { assetBaseUrl, version }) {
   root.addEventListener('click', event => {
     if (!event.target.closest('.element-search')) el('searchResults').hidden = true;
   });
+  el('materialType').addEventListener('change', event => {
+    state.materialType = event.target.value || 'all';
+    state.page = 1;
+    renderResults();
+  });
   el('pageSize').addEventListener('change', event => { state.pageSize = Number(event.target.value); state.page = 1; renderResults(); });
   el('prevPage').addEventListener('click', () => { state.page--; renderResults(); el('resultsBody').closest('.results-wrap').scrollTop = 0; });
   el('nextPage').addEventListener('click', () => { state.page++; renderResults(); el('resultsBody').closest('.results-wrap').scrollTop = 0; });
@@ -257,17 +283,20 @@ export function initExplorer(root, { assetBaseUrl, version }) {
     const url = URL.createObjectURL(new Blob(['\uFEFF', exportRows(matches())], { type: 'text/csv;charset=utf-8' }));
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${state.official ? `hec-v${version}` : 'hec-local'}-${[...state.selected].sort().join('-')}.csv`;
+    const typePart = state.materialType !== 'all' ? `${state.materialType}-` : '';
+    link.download = `${state.official ? `hec-v${version}` : 'hec-local'}-${typePart}${[...state.selected].sort().join('-')}.csv`;
     link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   });
   document.addEventListener('localechange', () => {
     renderStatus();
+    renderMaterialTypes(true);
     renderPeriodicTable(true);
     renderSelection(true);
     renderResults(true);
     renderSearch(true);
   });
+  renderMaterialTypes();
   renderPeriodicTable();
   renderSelection();
   renderResults();

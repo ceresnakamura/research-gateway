@@ -56,6 +56,16 @@ test('material_type matches anion-site derivation for every official row', () =>
 
 test('empty selection preserves the original empty-result behavior', () => {
   assert.deepEqual(filterRows(rows, []), []);
+  assert.deepEqual(filterRows(rows, [], 'oxide'), []);
+});
+
+test('material type filter narrows matches and all preserves the untyped filter', () => {
+  const untyped = filterRows(rows, ['Hf']);
+  assert.deepEqual(filterRows(rows, ['Hf'], 'all').map(row => row.id), untyped.map(row => row.id));
+  const oxides = filterRows(rows, ['Hf'], 'oxide');
+  assert.ok(oxides.length > 0);
+  assert.ok(oxides.length < untyped.length);
+  assert.ok(oxides.every(row => row.data.material_type === 'oxide'));
 });
 
 test('all selected elements must coexist at the SAME lattice site', () => {

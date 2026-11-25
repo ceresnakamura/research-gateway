@@ -22,4 +22,5 @@ Selecting one element matches records with that element at any lattice site.
 Selecting several elements requires **all of them to occur at the same lattice site**.
 For example, in the first AlB2 prototype record, Hf and Ti share site A and can
 match together. Hf and B occupy different sites and do not match together in
-that record.
+that record. The material-type dropdown further narrows matches by `material_type`;
+the default value “all” applies no type constraint.

@@ -3,6 +3,60 @@ export const ANION_SYMBOLS = new Set([
   'B', 'C', 'N', 'O', 'F', 'Si', 'P', 'S', 'Cl', 'Se', 'Br', 'Sb', 'Te', 'I', 'Sn', 'Ge', 'As', 'H',
 ]);
 
+/** Stable display order for known material types in the explorer filter. */
+export const MATERIAL_TYPE_ORDER = [
+  'oxide', 'carbide', 'silicate', 'boride', 'telluride', 'chalcogenide', 'nitride',
+  'carbonitride', 'sulfide', 'silicide', 'fluoride', 'selenide', 'antimonide',
+  'phosphate', 'oxyfluoride', 'thiophosphate', 'chloride', 'stannate',
+  'carbosilicate', 'stannide', 'iodide',
+];
+
+const MATERIAL_TYPE_LABELS = {
+  oxide: ['氧化物', 'oxide'],
+  carbide: ['碳化物', 'carbide'],
+  silicate: ['硅酸盐', 'silicate'],
+  boride: ['硼化物', 'boride'],
+  telluride: ['碲化物', 'telluride'],
+  chalcogenide: ['硫族化物', 'chalcogenide'],
+  nitride: ['氮化物', 'nitride'],
+  carbonitride: ['碳氮化物', 'carbonitride'],
+  sulfide: ['硫化物', 'sulfide'],
+  silicide: ['硅化物', 'silicide'],
+  fluoride: ['氟化物', 'fluoride'],
+  selenide: ['硒化物', 'selenide'],
+  antimonide: ['锑化物', 'antimonide'],
+  phosphate: ['磷酸盐', 'phosphate'],
+  oxyfluoride: ['氧氟化物', 'oxyfluoride'],
+  thiophosphate: ['硫代磷酸盐', 'thiophosphate'],
+  chloride: ['氯化物', 'chloride'],
+  stannate: ['锡酸盐', 'stannate'],
+  carbosilicate: ['碳硅酸盐', 'carbosilicate'],
+  stannide: ['锡化物', 'stannide'],
+  iodide: ['碘化物', 'iodide'],
+  phosphide: ['磷化物', 'phosphide'],
+};
+
+/**
+ * Bilingual label for a material-type token. Unknown tokens display as themselves.
+ * @param {string} type
+ * @returns {[string, string]}
+ */
+export function materialTypeLabel(type) {
+  if (type === 'all') return ['全部', 'all'];
+  return MATERIAL_TYPE_LABELS[type] || [type, type];
+}
+
+/**
+ * Sort material types by the stable official order, then any remaining tokens alphabetically.
+ * @param {Iterable<string>} types
+ * @returns {string[]}
+ */
+export function sortMaterialTypes(types) {
+  const present = new Set([...types].filter(Boolean));
+  const ordered = MATERIAL_TYPE_ORDER.filter(type => present.delete(type));
+  return [...ordered, ...[...present].sort()];
+}
+
 const SINGLE_TYPE = {
   O: 'oxide',
   C: 'carbide',

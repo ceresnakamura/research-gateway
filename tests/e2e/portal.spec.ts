@@ -51,6 +51,7 @@ test.beforeEach(async ({ page }, testInfo) => {
 });
 
 test('same-site filtering, empty results, clear and focus state', async ({ page }) => {
+  await expect(page.locator('#materialType')).toHaveValue('all');
   const hf = page.locator('#periodicTable [data-symbol="Hf"]');
   await hf.click();
   await expect(hf).toHaveAttribute('aria-pressed', 'true');
@@ -69,6 +70,17 @@ test('same-site filtering, empty results, clear and focus state', async ({ page 
   await page.locator('#clearSelection').click();
   await expect(page.locator('#emptyState')).toContainText('尚未选择元素');
   await expect(page.locator('#periodicTable [aria-pressed="true"]')).toHaveCount(0);
+});
+
+test('material type dropdown narrows results and all restores the full match', async ({ page }) => {
+  await expect(page.locator('#materialType')).toHaveValue('all');
+  await page.locator('#materialType').selectOption('oxide');
+  await page.locator('#periodicTable [data-symbol="Hf"]').click();
+  const oxides = filterRows(rows, ['Hf'], 'oxide');
+  await expect(page.locator('#resultCount')).toContainText(`${oxides.length} 条匹配记录`);
+  await expect(page.locator('#resultsBody tr').first().locator('td').nth(2)).toHaveText('oxide');
+  await page.locator('#materialType').selectOption('all');
+  await expect(page.locator('#resultCount')).toContainText(`${filterRows(rows, ['Hf']).length} 条匹配记录`);
 });
 
 test('pagination preserves IDs and CSV export includes every matching record', async ({ page }) => {

@@ -53,9 +53,17 @@ export function rowMatchesSelection(sites, selected) {
   return Object.values(sites).some(elements => selected.every(element => elements.has(element)));
 }
 
-/** @param {HecRow[]} rows @param {string[]} selected @returns {HecRow[]} */
-export function filterRows(rows, selected) {
-  return selected.length ? rows.filter(row => rowMatchesSelection(row.sites, selected)) : [];
+/**
+ * @param {HecRow[]} rows
+ * @param {string[]} selected
+ * @param {string} [materialType]
+ * @returns {HecRow[]}
+ */
+export function filterRows(rows, selected, materialType) {
+  if (!selected.length) return [];
+  const type = materialType && materialType !== 'all' ? materialType : '';
+  return rows.filter(row => rowMatchesSelection(row.sites, selected)
+    && (!type || row.data.material_type === type));
 }
 
 export function exportRows(rows) {
