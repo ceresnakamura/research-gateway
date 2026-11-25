@@ -1,14 +1,17 @@
-import { rowsFromCsv, filterRows, exportRows } from './data.js';
+import { rowsFromCsv, filterRows, sortRowsByEntropy, exportRows } from './data.js';
 import { PERIODIC_TABLE_LAYOUT, LANTHANIDE_LAYOUT, ATOMIC_NUMBERS, ELEMENT_NAMES, ENGLISH_ELEMENT_NAMES, elementMatchesQuery, elementCategory } from './elements.js';
 import { escapeHtml, buildPrettyFormula, formatChemicalText, extractDois, paperTitle } from './format.js';
 import { validateIndexes } from './indexes.js';
+import { formatConfigurationalEntropy } from './entropy.js';
 import { materialTypeLabel, sortMaterialTypes } from './material-type.js';
 import { HecError, errorMessage } from './messages.js';
 import { getLocale, translate as t } from '../../lib/i18n.js';
 
+const ENTROPY_SORT_CYCLE = ['', 'desc', 'asc'];
+
 export function initExplorer(root, { assetBaseUrl, version }) {
   const el = id => root.querySelector(`#${id}`);
-  const state = { rows: [], selected: new Set(), materialType: 'all', page: 1, pageSize: 25, official: false, indexes: { cifs: {}, supercells: {}, titles: {} }, loadEpoch: 0, sourceLabel: '', loading: false, error: null };
+  const state = { rows: [], selected: new Set(), materialType: 'all', entropySort: '', page: 1, pageSize: 25, official: false, indexes: { cifs: {}, supercells: {}, titles: {} }, loadEpoch: 0, sourceLabel: '', loading: false, error: null };
   let available = new Set();
   const elementName = symbol => t(ELEMENT_NAMES[symbol], ENGLISH_ELEMENT_NAMES[symbol]);
   const morePapers = count => t(`另 ${count} 篇文献`, `${count} more ${count === 1 ? 'paper' : 'papers'}`);
@@ -27,7 +30,23 @@ export function initExplorer(root, { assetBaseUrl, version }) {
     return links[0] + (links.length > 1 ? `<details><summary data-more-papers="${links.length - 1}">${morePapers(links.length - 1)}</summary>${links.slice(1).join('')}</details>` : '');
   }
 
-  function matches() { return filterRows(state.rows, [...state.selected], state.materialType); }
+  function matches() {
+    return sortRowsByEntropy(filterRows(state.rows, [...state.selected], state.materialType), state.entropySort);
+  }
+
+  function renderEntropySort() {
+    const button = el('entropySort');
+    const header = button.closest('th');
+    const ariaSort = state.entropySort === 'desc' ? 'descending' : state.entropySort === 'asc' ? 'ascending' : 'none';
+    header?.setAttribute('aria-sort', ariaSort);
+    button.dataset.sort = state.entropySort || 'none';
+    button.setAttribute('aria-label', state.entropySort === 'desc'
+      ? t('按构型熵升序排序', 'Sort by configurational entropy ascending')
+      : state.entropySort === 'asc'
+        ? t('恢复默认排序', 'Restore default order')
+        : t('按构型熵降序排序', 'Sort by configurational entropy descending'));
+    button.querySelector('.sort-indicator').textContent = state.entropySort === 'desc' ? '↓' : state.entropySort === 'asc' ? '↑' : '';
+  }
 
   function renderMaterialTypes(labelsOnly = false) {
     const select = el('materialType');
@@ -56,6 +75,7 @@ export function initExplorer(root, { assetBaseUrl, version }) {
     el('resultCount').textContent = state.selected.size
       ? t(`${filtered.length} 条匹配记录${filtered.length ? ` · 显示 ${range}` : ''}`, `${filtered.length} matching ${filtered.length === 1 ? 'record' : 'records'}${filtered.length ? ` · Showing ${range}` : ''}`)
       : t('尚未选择元素', 'No elements selected');
+    renderEntropySort();
     if (labelsOnly) {
       el('resultsBody').querySelectorAll('[data-more-papers]').forEach(summary => { summary.textContent = morePapers(Number(summary.dataset.morePapers)); });
       el('resultsBody').querySelectorAll('[data-local-structure]').forEach(label => { label.title = localStructureTitle(); });
@@ -63,6 +83,7 @@ export function initExplorer(root, { assetBaseUrl, version }) {
       <td>${String(row.id).padStart(3, '0')}</td>
       <td class="formula-cell">${buildPrettyFormula(row.sortedJsonValue, row.data.prototype_formula)}</td>
       <td>${escapeHtml(row.data.material_type || '—')}</td>
+      <td>${escapeHtml(formatConfigurationalEntropy(row.data.configurational_entropy))}</td>
       <td>${formatChemicalText(row.data.prototype || '—')}</td>
       <td>${structureLinks(row, 'cifs', 'cifs', 'CIF')}</td>
       <td>${structureLinks(row, 'supercells', 'relaxed-supercells', 'VASP')}</td>
@@ -172,6 +193,7 @@ export function initExplorer(root, { assetBaseUrl, version }) {
     state.rows = rows;
     state.official = official;
     state.selected.clear();
+    state.entropySort = '';
     state.page = 1;
     available = new Set(rows.flatMap(row => [...row.elements]));
     state.sourceLabel = label;
@@ -273,6 +295,12 @@ export function initExplorer(root, { assetBaseUrl, version }) {
   });
   el('materialType').addEventListener('change', event => {
     state.materialType = event.target.value || 'all';
+    state.page = 1;
+    renderResults();
+  });
+  el('entropySort').addEventListener('click', () => {
+    const index = ENTROPY_SORT_CYCLE.indexOf(state.entropySort);
+    state.entropySort = ENTROPY_SORT_CYCLE[(index + 1) % ENTROPY_SORT_CYCLE.length];
     state.page = 1;
     renderResults();
   });

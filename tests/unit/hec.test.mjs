@@ -4,9 +4,10 @@ import vm from 'node:vm';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 import {
-  rowsFromCsv, filterRows, rowMatchesSelection, exportRows,
+  rowsFromCsv, filterRows, sortRowsByEntropy, rowMatchesSelection, exportRows,
 } from '../../src/features/hec/data.js';
 import { buildPrettyFormula, escapeHtml, extractDois } from '../../src/features/hec/format.js';
+import { configurationalEntropyFromSortedJson, formatConfigurationalEntropy } from '../../src/features/hec/entropy.js';
 import { materialTypeFromSortedJson } from '../../src/features/hec/material-type.js';
 import { assetPath } from '../../src/lib/paths.js';
 import { validateIndexes } from '../../src/features/hec/indexes.js';
@@ -52,6 +53,33 @@ test('material_type matches anion-site derivation for every official row', () =>
     stannide: 1,
     iodide: 1,
   });
+});
+
+test('configurational_entropy matches max-site mixing entropy for every official row', () => {
+  for (const row of rows) {
+    const expected = configurationalEntropyFromSortedJson(row.sortedJsonValue);
+    assert.ok(expected != null, `row ${row.id} must resolve configurational entropy`);
+    assert.equal(Number(row.data.configurational_entropy), expected, `row ${row.id}`);
+  }
+  assert.equal(Number(rows[0].data.configurational_entropy), 1.609438);
+  assert.equal(Number(rows[6].data.configurational_entropy), 1.593216);
+  assert.equal(Number(rows[30].data.configurational_entropy), 0.936888);
+  assert.equal(Number(rows[255].data.configurational_entropy), 1.609438);
+  assert.equal(formatConfigurationalEntropy(rows[0].data.configurational_entropy), '1.609');
+  assert.equal(formatConfigurationalEntropy(''), '—');
+});
+
+test('sortRowsByEntropy orders by value, keeps ties stable, and places missing last', () => {
+  const sample = [
+    { id: 3, data: { configurational_entropy: '1.0' } },
+    { id: 1, data: { configurational_entropy: '2.0' } },
+    { id: 2, data: { configurational_entropy: '2.0' } },
+    { id: 4, data: { configurational_entropy: '' } },
+    { id: 5, data: {} },
+  ];
+  assert.deepEqual(sortRowsByEntropy(sample, '').map(row => row.id), [3, 1, 2, 4, 5]);
+  assert.deepEqual(sortRowsByEntropy(sample, 'desc').map(row => row.id), [1, 2, 3, 4, 5]);
+  assert.deepEqual(sortRowsByEntropy(sample, 'asc').map(row => row.id), [3, 1, 2, 4, 5]);
 });
 
 test('empty selection preserves the original empty-result behavior', () => {

@@ -37,6 +37,7 @@ en:
 | --- | --- |
 | `Sorted Json formula` | 按 A、B 等晶格位点组织的元素及占位比例 |
 | `material_type` | 由阴离子位点推导的材料类型，如 oxide、carbide、fluoride |
+| `configurational_entropy` | 最高熵晶格位点的理想混合熵（以 R 为单位），取各位点 −Σ xᵢ ln xᵢ 的最大值 |
 | `prototype` / `prototype_name` | 晶体原型及其名称 |
 | `prototype_formula` | 位点的化学计量系数，用于生成可读化学式 |
 | `DOIs` | 来源论文链接 |

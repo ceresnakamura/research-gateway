@@ -66,6 +66,39 @@ export function filterRows(rows, selected, materialType) {
     && (!type || row.data.material_type === type));
 }
 
+/**
+ * Parse a stored configurational_entropy cell. Missing or non-numeric values return null.
+ * @param {HecRow} row
+ * @returns {number | null}
+ */
+export function rowEntropyValue(row) {
+  const raw = row?.data?.configurational_entropy;
+  if (raw == null || raw === '') return null;
+  const value = Number(raw);
+  return Number.isFinite(value) ? value : null;
+}
+
+/**
+ * Sort filtered rows by configurational entropy. Missing values sort last.
+ * Equal values keep the smaller record id first.
+ * @param {HecRow[]} rows
+ * @param {'desc' | 'asc' | ''} direction
+ * @returns {HecRow[]}
+ */
+export function sortRowsByEntropy(rows, direction) {
+  if (!direction) return rows;
+  const sign = direction === 'asc' ? 1 : -1;
+  return [...rows].sort((left, right) => {
+    const a = rowEntropyValue(left);
+    const b = rowEntropyValue(right);
+    if (a == null && b == null) return left.id - right.id;
+    if (a == null) return 1;
+    if (b == null) return -1;
+    if (a !== b) return sign * (a - b);
+    return left.id - right.id;
+  });
+}
+
 export function exportRows(rows) {
   if (!rows.length) return '';
   return Papa.unparse(rows.map(row => {
