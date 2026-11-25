@@ -42,6 +42,7 @@ export function initExplorer(root, { assetBaseUrl, version }) {
     } else el('resultsBody').innerHTML = filtered.slice(offset, offset + state.pageSize).map(row => `<tr>
       <td>${String(row.id).padStart(3, '0')}</td>
       <td class="formula-cell">${buildPrettyFormula(row.sortedJsonValue, row.data.prototype_formula)}</td>
+      <td>${escapeHtml(row.data.material_type || '—')}</td>
       <td>${formatChemicalText(row.data.prototype || '—')}</td>
       <td>${structureLinks(row, 'cifs', 'cifs', 'CIF')}</td>
       <td>${structureLinks(row, 'supercells', 'relaxed-supercells', 'VASP')}</td>

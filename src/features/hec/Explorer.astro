@@ -34,7 +34,7 @@ import './styles.css';
     <div class="results-heading"><div><h3><T zh="筛选结果" en="Results"/></h3><p id="resultCount" aria-live="polite"><T zh="尚未选择元素" en="No elements selected"/></p></div><button id="exportResults" type="button" class="button" disabled><Download size={16}/><T zh="导出筛选结果" en="Export results"/></button></div>
     <div class="results-wrap" tabindex="0" role="region" {...attrs('aria-label', '筛选结果表，可横向滚动', 'Results table, horizontally scrollable')}>
       <table>
-        <thead><tr><th scope="col">ID</th><th scope="col"><T zh="化学式" en="Composition"/></th><th scope="col"><T zh="晶体原型" en="Prototype"/></th><th scope="col">CIF</th><th scope="col"><T zh="弛豫超胞" en="Relaxed supercell"/></th><th scope="col"><T zh="来源文献" en="References"/></th></tr></thead>
+        <thead><tr><th scope="col">ID</th><th scope="col"><T zh="化学式" en="Composition"/></th><th scope="col"><T zh="材料类型" en="Type"/></th><th scope="col"><T zh="晶体原型" en="Prototype"/></th><th scope="col">CIF</th><th scope="col"><T zh="弛豫超胞" en="Relaxed supercell"/></th><th scope="col"><T zh="来源文献" en="References"/></th></tr></thead>
         <tbody id="resultsBody"></tbody>
       </table>
     </div>

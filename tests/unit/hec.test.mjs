@@ -7,6 +7,7 @@ import {
   rowsFromCsv, filterRows, rowMatchesSelection, exportRows,
 } from '../../src/features/hec/data.js';
 import { buildPrettyFormula, escapeHtml, extractDois } from '../../src/features/hec/format.js';
+import { materialTypeFromSortedJson } from '../../src/features/hec/material-type.js';
 import { assetPath } from '../../src/lib/paths.js';
 import { validateIndexes } from '../../src/features/hec/indexes.js';
 
@@ -18,6 +19,39 @@ test('official dataset contains 717 records with stable original indexes', () =>
   assert.equal(rows[0].id, 1);
   assert.equal(rows[716].id, 717);
   assert.equal(rows[0].data.prototype, 'AlB2');
+});
+
+test('material_type matches anion-site derivation for every official row', () => {
+  const counts = {};
+  for (const row of rows) {
+    const expected = materialTypeFromSortedJson(row.sortedJsonValue);
+    assert.ok(expected, `row ${row.id} must resolve a material type`);
+    assert.equal(row.data.material_type, expected, `row ${row.id}`);
+    counts[expected] = (counts[expected] || 0) + 1;
+  }
+  assert.deepEqual(counts, {
+    oxide: 445,
+    carbide: 57,
+    silicate: 44,
+    boride: 39,
+    telluride: 23,
+    chalcogenide: 17,
+    nitride: 16,
+    carbonitride: 15,
+    sulfide: 12,
+    silicide: 10,
+    fluoride: 9,
+    selenide: 5,
+    antimonide: 5,
+    phosphate: 4,
+    oxyfluoride: 4,
+    thiophosphate: 4,
+    chloride: 3,
+    stannate: 2,
+    carbosilicate: 1,
+    stannide: 1,
+    iodide: 1,
+  });
 });
 
 test('empty selection preserves the original empty-result behavior', () => {

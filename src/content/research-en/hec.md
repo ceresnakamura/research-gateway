@@ -10,6 +10,7 @@ searchable resource for atomic-scale simulation and data-driven materials design
 | Field | Meaning |
 | --- | --- |
 | `Sorted Json formula` | Elements and occupancy fractions grouped by lattice sites such as A and B. |
+| `material_type` | Material class derived from anion sites, such as oxide, carbide or fluoride. |
 | `prototype` / `prototype_name` | Crystal prototype and name. |
 | `prototype_formula` | Site stoichiometric coefficients used to construct a readable chemical formula. |
 | `DOIs` | Links to source papers. |

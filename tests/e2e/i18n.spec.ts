@@ -159,12 +159,14 @@ test('overview copy stays aligned in both languages', async ({ page }, testInfo)
     await expect(content.getByRole('heading', { name: locale === 'zh' ? 'CSV原始数据字段' : 'Raw CSV data fields', exact: true })).toBeVisible();
     await expect(content.locator('tbody tr td:nth-child(2)')).toHaveText(locale === 'zh' ? [
       '按 A、B 等晶格位点组织的元素及占位比例',
+      '由阴离子位点推导的材料类型，如 oxide、carbide、fluoride',
       '晶体原型及其名称',
       '位点的化学计量系数，用于生成可读化学式',
       '来源论文链接',
       '筛选导出时附加的原始记录编号',
     ] : [
       'Elements and occupancy fractions grouped by lattice sites such as A and B.',
+      'Material class derived from anion sites, such as oxide, carbide or fluoride.',
       'Crystal prototype and name.',
       'Site stoichiometric coefficients used to construct a readable chemical formula.',
       'Links to source papers.',
